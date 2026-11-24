@@ -2,25 +2,18 @@ package org.mardon.database;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.hibernate.annotations.Cache;
 
 @Entity
 @Table(name = "tickets")
-@Cacheable
-@org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class Ticket {
     @Id
-    private Long id;
+    private Long id; // primary key (childId)
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "event_id", nullable = false)
+    private String seat;
+
+    @ManyToOne
+    @JoinColumn(name = "event_id") // Foreign key (FK) in the DB table
     private Event event;
-
-    private String seatCode;
-
-    protected Ticket() {}
-    public Ticket(Long id, Event event, String seatCode) {
-        this.id = id;
-        this.event = event;
-        this.seatCode = seatCode;
-    }
 }
