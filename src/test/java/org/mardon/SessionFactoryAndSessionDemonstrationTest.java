@@ -9,30 +9,30 @@ import org.mardon.database.Ticket;
 public class SessionFactoryAndSessionDemonstrationTest {
     @Test
     void demonstrationTest(){
-        // SessionFactory создается один раз на всё приложение и владеет общим L2-кешем
+        // SessionFactory is created once per application and owns the shared L2 cache
         SessionFactory sessionFactory = HibernateConfigurationExample.buildSessionFactory();
 
         Ticket t1, t2, t3;
 
-        // --- ТРАНЗАКЦИЯ / СЕССИЯ 1 ---
+        // --- TRANSACTION / SESSION 1 ---
         try (Session session1 = sessionFactory.openSession()) {
-            // 1. Обращение к БД (L1 и L2 пусты). Запись загружается в L2 и L1.
+            // 1. Database lookup (both L1 and L2 are empty). The record is loaded into L2 and L1.
             t1 = session1.find(Ticket.class, 10L);
 
-            // 2. Попадание в L1-кеш (Persistence Context). SQL-запрос НЕ выполняется.
+            // 2. L1 cache (Persistence Context) hit. No SQL query is executed.
             t2 = session1.find(Ticket.class, 10L);
 
-            // Identity Map гарантирует возврат той же самой ссылки в памяти внутри одной Session:
+            // Identity Map guarantees returning the exact same object reference within a single Session:
             assert t1 == t2; // true
-        } // Здесь session1 закрывается -> L1-кеш полностью уничтожается.
+        } // session1 closes here -> L1 cache is completely destroyed.
 
-        // --- ТРАНЗАКЦИЯ / СЕССИЯ 2 (другой поток / запрос) ---
+        // --- TRANSACTION / SESSION 2 (another thread / request) ---
         try (Session session2 = sessionFactory.openSession()) {
-            // L1 пуст, но данные берутся из общего L2-кеша. SQL-запрос к БД НЕ выполняется.
+            // L1 is empty, so data is fetched from the shared L2 cache. No SQL query is executed.
             t3 = session2.find(Ticket.class, 10L);
 
-            // L2 хранит не сам объект, а его данные, поэтому для новой сессии создается новый экземпляр:
-            assert t1 != t3; // true (разные ссылки, но одинаковые значения полей)
+            // L2 stores disassembled state rather than the object itself, so a new instance is hydrated for the new session:
+            assert t1 != t3; // true (different references, identical field values)
         }
     }
 }
